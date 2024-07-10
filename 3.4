@@ -1,0 +1,87 @@
+1. Install Dependencies
+
+First, initialize your project and install the necessary packages:
+
+bash
+mkdir degen-token
+cd degen-token
+npm init -y
+npm install web3@1.5.3 @openzeppelin/contracts
+2. Write the ERC-20 Smart Contract in Solidity
+
+Create a file named DegenToken.sol in the contracts directory:
+
+solidity
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract DegenToken is ERC20, Ownable {
+    constructor(uint256 initialSupply) ERC20("Degen Token", "DGN") {
+        _mint(msg.sender, initialSupply);
+    }
+
+    function mint(address to, uint256 amount) public onlyOwner {
+        _mint(to, amount);
+    }
+
+    function burn(uint256 amount) public {
+        _burn(msg.sender, amount);
+    }
+}
+3. Write the JavaScript Deployment Script
+
+Create a file named deploy.js in the root directory of your project:
+
+javascript
+
+const Web3 = require('web3');
+const { abi, bytecode } = require('./build/contracts/DegenToken.json'); // Adjust the path as per your project structure
+
+const web3 = new Web3('YOUR_RPC_URL'); // Replace with your Ethereum or Avalanche RPC URL
+const deployerAddress = 'YOUR_DEPLOYER_ADDRESS'; // Replace with your deployer address
+const deployerPrivateKey = 'YOUR_DEPLOYER_PRIVATE_KEY'; // Replace with your deployer private key
+
+const deployContract = async () => {
+    const contract = new web3.eth.Contract(abi);
+
+    const deploy = contract.deploy({
+        data: bytecode,
+        arguments: [web3.utils.toWei('1000000', 'ether')] // Initial supply (adjust as needed)
+    });
+
+    const gas = await deploy.estimateGas();
+    console.log('Estimated Gas: ' + gas);
+
+    const signedTx = await web3.eth.accounts.signTransaction(
+        {
+            from: deployerAddress,
+            data: deploy.encodeABI(),
+            gas: web3.utils.toHex(gas),
+            gasPrice: web3.utils.toHex(await web3.eth.getGasPrice())
+        },
+        deployerPrivateKey
+    );
+
+    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+    console.log('Contract deployed at address: ' + receipt.contractAddress);
+};
+
+deployContract();
+4. Explanation of the JavaScript Deployment Script
+
+Web3 Initialization: Sets up Web3 instance with your RPC URL.
+Contract ABI and Bytecode: Loads ABI and bytecode of the smart contract from the compiled artifacts.
+Deploy Function: Defines a function to deploy the contract with initial supply.
+Deployment Parameters: Specifies gas estimation, transaction signing with private key, and sends the transaction to deploy the contract.
+Replace placeholders: Replace YOUR_RPC_URL, YOUR_DEPLOYER_ADDRESS, and YOUR_DEPLOYER_PRIVATE_KEY with your actual values.
+5. Deploy and Interact
+
+Run the deployment script with:
+
+bash
+
+node deploy.jse.
